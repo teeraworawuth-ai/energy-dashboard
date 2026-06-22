@@ -1,0 +1,12 @@
+{
+  "name": "energy-dashboard-frontend",
+  "version": "1.0.0",
+  "description": "Smart Energy Dashboard Frontend for Vercel",
+  "scripts": {
+    "start": "echo 'Run locally using Vercel CLI: vercel dev'"
+  },
+  "dependencies": {
+    "google-auth-library": "^9.11.0",
+    "google-spreadsheet": "^4.1.2"
+  }
+}
