@@ -11,13 +11,48 @@ const commonOptions = {
             titleColor: '#fff',
             bodyColor: '#fff',
             borderColor: 'rgba(255,255,255,0.1)',
-            borderWidth: 1
+            borderWidth: 1,
+            callbacks: {
+                label: function(context) {
+                    return ` ${context.dataset.label}: ${context.raw} W`;
+                }
+            }
         }
     },
     scales: {
         x: {
-            grid: { color: 'rgba(255, 255, 255, 0.05)' },
-            ticks: { color: '#94a3b8', maxTicksLimit: 12 } // limit labels
+            grid: { 
+                // Draw grid lines based on index (1 index = 1 minute)
+                color: (ctx) => {
+                    if (ctx.index === undefined) return 'transparent';
+                    if (ctx.index % 60 === 0) return 'rgba(255, 255, 255, 0.4)'; // 60 min (Brightest)
+                    if (ctx.index % 30 === 0) return 'rgba(255, 255, 255, 0.2)'; // 30 min
+                    if (ctx.index % 15 === 0) return 'rgba(255, 255, 255, 0.1)'; // 15 min
+                    if (ctx.index % 10 === 0) return 'rgba(255, 255, 255, 0.05)';// 10 min
+                    if (ctx.index % 5 === 0)  return 'rgba(255, 255, 255, 0.02)';// 5 min (Faintest)
+                    return 'transparent';
+                },
+                lineWidth: (ctx) => {
+                    if (ctx.index === undefined) return 0;
+                    if (ctx.index % 60 === 0) return 2;   // 60 min
+                    if (ctx.index % 30 === 0) return 1.5; // 30 min
+                    return 1; // 15, 10, 5 min
+                },
+                drawTicks: false
+            },
+            ticks: { 
+                color: '#94a3b8',
+                autoSkip: false, // Force it to process all 2880 ticks for the grid lines
+                maxRotation: 0,
+                callback: function(val, index) {
+                    // Only show text label every 2 hours (120 mins) to prevent text overlap on mobile
+                    // or every 4 hours. Let's do 4 hours (240 mins) for 48-hour span = 12 labels
+                    if (index % 240 === 0) {
+                        return this.getLabelForValue(val);
+                    }
+                    return '';
+                }
+            }
         },
         y: {
             grid: { color: 'rgba(255, 255, 255, 0.05)' },
@@ -36,6 +71,8 @@ let charts = {};
 let allFetchedData = [];
 let activeDay1 = null;
 let activeDay2 = null;
+let activeMonth1 = null;
+let activeYear1 = null;
 
 function initChart(ctxId, color) {
     const ctx = document.getElementById(ctxId).getContext('2d');
@@ -52,7 +89,7 @@ function initChart(ctxId, color) {
                 data: [],
                 borderColor: color,
                 backgroundColor: gradient,
-                borderWidth: 2,
+                borderWidth: 1.5,
                 pointRadius: 0,
                 pointHoverRadius: 6,
                 fill: true,
@@ -81,7 +118,9 @@ function generateDatePairs() {
             day1: d1.getDate(),
             day2: d2.getDate(),
             month1: d1.getMonth() + 1,
-            month2: d2.getMonth() + 1
+            month2: d2.getMonth() + 1,
+            year1: d1.getFullYear(),
+            year2: d2.getFullYear()
         });
     }
     return pairs;
@@ -92,10 +131,11 @@ function renderDateButtons() {
     const container = document.getElementById('date-buttons');
     container.innerHTML = '';
     
-    // Default to the last pair (today - tomorrow)
     const defaultPair = pairs[pairs.length - 1];
     activeDay1 = defaultPair.day1;
     activeDay2 = defaultPair.day2;
+    activeMonth1 = defaultPair.month1;
+    activeYear1 = defaultPair.year1;
 
     pairs.forEach(pair => {
         const btn = document.createElement('button');
@@ -110,6 +150,8 @@ function renderDateButtons() {
             btn.classList.add('active');
             activeDay1 = pair.day1;
             activeDay2 = pair.day2;
+            activeMonth1 = pair.month1;
+            activeYear1 = pair.year1;
             updateChartsWithActiveDates();
         };
         
@@ -123,22 +165,27 @@ function parseThaiDate(dateStr) {
     const [datePart, timePart] = dateStr.split(' ');
     const [day, month, year] = datePart.split('/');
     const [hours, minutes, seconds] = timePart.split(':');
-    
-    // Convert Buddhist year to Gregorian if needed (assume 25xx)
     const gregorianYear = parseInt(year) > 2500 ? parseInt(year) - 543 : parseInt(year);
-    
     return new Date(gregorianYear, parseInt(month) - 1, parseInt(day), parseInt(hours), parseInt(minutes), parseInt(seconds));
 }
 
 function updateChartsWithActiveDates() {
-    if (allFetchedData.length === 0) return;
-
-    // Filter data for the active 48-hour window
-    // We only have the day number to match, which is enough for a 7-day rolling window
-    const filteredData = allFetchedData.filter(row => {
-        const d = parseThaiDate(row.time);
-        return d.getDate() === activeDay1 || d.getDate() === activeDay2;
-    });
+    // We create exactly 2880 points (48 hours * 60 minutes)
+    // start time: activeDay1 00:00:00
+    const startDate = new Date(activeYear1, activeMonth1 - 1, activeDay1, 0, 0, 0);
+    
+    // Create mapping of 'YYYY-MM-DD HH:mm' -> watt
+    const dataMap = { 'A101': {}, 'B101': {}, 'C101': {} };
+    
+    if (allFetchedData.length > 0) {
+        allFetchedData.forEach(row => {
+            const d = parseThaiDate(row.time);
+            const key = `${d.getDate()}-${d.getHours()}-${d.getMinutes()}`;
+            if (dataMap[row.room]) {
+                dataMap[row.room][key] = row.watt;
+            }
+        });
+    }
 
     const groupedData = {
         'A101': { times: [], watts: [] },
@@ -146,25 +193,30 @@ function updateChartsWithActiveDates() {
         'C101': { times: [], watts: [] }
     };
 
-    // If a day has no data, we should pad it with 0. 
-    // We will ensure at least a starting 0 and ending 0 for each day if missing.
-    // For simplicity, if filteredData is completely empty, we just inject two 0s.
-    ['A101', 'B101', 'C101'].forEach(room => {
-        const roomData = filteredData.filter(d => d.room === room);
+    let lastKnownWatt = { 'A101': 0, 'B101': 0, 'C101': 0 };
+
+    // Pad exactly 2880 points
+    for (let i = 0; i < 2880; i++) {
+        const currentDate = new Date(startDate.getTime() + i * 60000); // add i minutes
+        const d = currentDate.getDate();
+        const h = currentDate.getHours();
+        const m = currentDate.getMinutes();
         
-        if (roomData.length === 0) {
-            // Day has no data at all -> plot 0
-            groupedData[room].times = [`วันที่ ${activeDay1} 00:00`, `วันที่ ${activeDay2} 23:59`];
-            groupedData[room].watts = [0, 0];
-        } else {
-            roomData.forEach(row => {
-                const d = parseThaiDate(row.time);
-                const timeLabel = `วันที่ ${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-                groupedData[room].times.push(timeLabel);
-                groupedData[room].watts.push(row.watt);
-            });
-        }
-    });
+        const timeLabel = `วันที่ ${d} ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        const key = `${d}-${h}-${m}`;
+
+        ['A101', 'B101', 'C101'].forEach(room => {
+            groupedData[room].times.push(timeLabel);
+            
+            // If we have data for this exact minute, use it. Otherwise use last known or 0.
+            if (dataMap[room][key] !== undefined) {
+                lastKnownWatt[room] = dataMap[room][key];
+            } else if (i === 0) {
+                lastKnownWatt[room] = 0; // force start at 0 if no data
+            }
+            groupedData[room].watts.push(lastKnownWatt[room]);
+        });
+    }
 
     // Update Charts
     ['A101', 'B101', 'C101'].forEach(room => {
