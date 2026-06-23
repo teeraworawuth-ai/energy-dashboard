@@ -45,8 +45,8 @@ const rulerPlugin = {
             ctx.lineWidth = lineWidth;
             ctx.stroke();
             
-            // วาดตัวเลขบอกเวลาเฉพาะชั่วโมง (นาทีที่ 0)
-            if (minWithinHour === 0) {
+            // วาดตัวเลขบอกเวลาเฉพาะชั่วโมง (นาทีที่ 0) และวาดทุกๆ 2 ชั่วโมง (120 นาที) เพื่อไม่ให้รก
+            if (minWithinHour === 0 && i % 120 === 0) {
                 ctx.fillStyle = '#cbd5e1';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'top';
@@ -64,7 +64,7 @@ const rulerPlugin = {
                             ctx.fillStyle = '#3b82f6'; // สีฟ้าเด่นๆ สำหรับขึ้นวันใหม่
                             ctx.fillText(`${parts[0]} ${parts[1]}`, posX, bottom + 20);
                         } else {
-                            // นอกนั้นแสดงแค่ตัวเลขชั่วโมง เช่น "1", "2", "3"
+                            // นอกนั้นแสดงแค่ตัวเลขชั่วโมง เช่น "2", "4", "6"
                             ctx.font = '11px sans-serif';
                             ctx.fillStyle = '#cbd5e1';
                             ctx.fillText(hourStr, posX, bottom + 20);
@@ -103,7 +103,8 @@ const commonOptions = {
         zoom: {
             pan: {
                 enabled: true,
-                mode: 'x'
+                mode: 'x',
+                threshold: 20 // ป้องกันนิ้วติดกราฟเวลารูดจอขึ้นลง ต้องตั้งใจไถซ้ายขวาจริงๆ ถึงจะเลื่อนกราฟ
             },
             zoom: {
                 wheel: {
