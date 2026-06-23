@@ -17,33 +17,13 @@ const rulerPlugin = {
 
         const totalMinutes = chart.data.labels.length;
         
-        for(let i = 0; i < totalMinutes; i += 5) { 
+        for(let i = 0; i < totalMinutes; i += 60) { 
             const posX = x.getPixelForValue(i);
             if(posX < left || posX > right) continue;
             
-            let tickLength = 5; // ขีดเล็กสุด (5 นาที)
-            let lineWidth = 1;
-            let opacity = 0.3;
-            
-            const minWithinHour = i % 60;
-            
-            if (minWithinHour === 0) {
-                tickLength = 20; // ชั่วโมง (ยาวสุด)
-                lineWidth = 2; 
-                opacity = 1.0;
-            } else if (minWithinHour === 30) {
-                tickLength = 14; // 30 นาที (ยาวรองลงมา)
-                lineWidth = 1.5; 
-                opacity = 0.8;
-            } else if (minWithinHour === 15 || minWithinHour === 45) {
-                tickLength = 9;  // 15, 45 นาที (ยาวเท่ากัน)
-                lineWidth = 1.2; 
-                opacity = 0.6;
-            } else { 
-                tickLength = 5;  // 5, 10, 20, 25, 35, 40, 50, 55 นาที (ขีดเล็กสุด)
-                lineWidth = 1;   
-                opacity = 0.4;
-            }
+            let tickLength = 15; // ขีดชั่วโมง
+            let lineWidth = 1.5;
+            let opacity = 0.8;
 
             ctx.beginPath();
             ctx.moveTo(posX, bottom);
@@ -52,31 +32,28 @@ const rulerPlugin = {
             ctx.lineWidth = lineWidth;
             ctx.stroke();
             
-            // วาดตัวเลขเฉพาะทุกๆ 1 ชั่วโมง (นาทีที่ 0)
-            if (minWithinHour === 0) {
-                ctx.fillStyle = '#cbd5e1';
-                ctx.font = '11px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'top';
-                
-                const labelText = chart.data.labels[i];
-                if (labelText) {
-                    const parts = labelText.split(' '); // ["วันที่", "22", "04:00"]
-                    if (parts.length >= 3) {
-                        const timePart = parts[2]; // "04:00"
-                        const hourStr = parseInt(timePart.split(':')[0], 10); // "4"
-                        
-                        // ถ้าเป็นเที่ยงคืน (0 นาฬิกา) ให้แสดงคำว่า "วันที่ XX" ด้วย เพื่อให้รู้ว่าขึ้นวันใหม่
-                        if (hourStr === 0) {
-                            ctx.font = 'bold 11px sans-serif';
-                            ctx.fillStyle = '#3b82f6'; // สีฟ้าเด่นๆ สำหรับขึ้นวันใหม่
-                            ctx.fillText(`${parts[0]} ${parts[1]}`, posX, bottom + 24);
-                        } else {
-                            // นอกนั้นแสดงแค่ตัวเลขชั่วโมง เช่น "1", "2", "3"
-                            ctx.font = '11px sans-serif';
-                            ctx.fillStyle = '#cbd5e1';
-                            ctx.fillText(hourStr, posX, bottom + 24);
-                        }
+            // วาดตัวเลขบอกเวลา (ทุก 1 ชั่วโมง)
+            ctx.fillStyle = '#cbd5e1';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            
+            const labelText = chart.data.labels[i];
+            if (labelText) {
+                const parts = labelText.split(' '); // ["วันที่", "22", "04:00"]
+                if (parts.length >= 3) {
+                    const timePart = parts[2]; // "04:00"
+                    const hourStr = parseInt(timePart.split(':')[0], 10); // "4"
+                    
+                    // ถ้าเป็นเที่ยงคืน (0 นาฬิกา) ให้แสดงคำว่า "วันที่ XX" ด้วย เพื่อให้รู้ว่าขึ้นวันใหม่
+                    if (hourStr === 0) {
+                        ctx.font = 'bold 11px sans-serif';
+                        ctx.fillStyle = '#3b82f6'; // สีฟ้าเด่นๆ สำหรับขึ้นวันใหม่
+                        ctx.fillText(`${parts[0]} ${parts[1]}`, posX, bottom + 20);
+                    } else {
+                        // นอกนั้นแสดงแค่ตัวเลขชั่วโมง เช่น "1", "2", "3"
+                        ctx.font = '11px sans-serif';
+                        ctx.fillStyle = '#cbd5e1';
+                        ctx.fillText(hourStr, posX, bottom + 20);
                     }
                 }
             }
