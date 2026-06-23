@@ -58,17 +58,10 @@ const rulerPlugin = {
                         const timePart = parts[2]; // "04:00"
                         const hourStr = parseInt(timePart.split(':')[0], 10); // "4"
                         
-                        // ถ้าเป็นเที่ยงคืน (0 นาฬิกา) ให้แสดงคำว่า "วันที่ XX" ด้วย เพื่อให้รู้ว่าขึ้นวันใหม่
-                        if (hourStr === 0) {
-                            ctx.font = 'bold 11px sans-serif';
-                            ctx.fillStyle = '#3b82f6'; // สีฟ้าเด่นๆ สำหรับขึ้นวันใหม่
-                            ctx.fillText(`${parts[0]} ${parts[1]}`, posX, bottom + 20);
-                        } else {
-                            // นอกนั้นแสดงแค่ตัวเลขชั่วโมง เช่น "2", "4", "6"
-                            ctx.font = '11px sans-serif';
-                            ctx.fillStyle = '#cbd5e1';
-                            ctx.fillText(hourStr, posX, bottom + 20);
-                        }
+                        ctx.font = '11px sans-serif';
+                        ctx.fillStyle = '#cbd5e1';
+                        // แสดงแค่ตัวเลขชั่วโมง เช่น "0", "2", "4", "6"
+                        ctx.fillText(hourStr, posX, bottom + 20);
                     }
                 }
             }
@@ -316,7 +309,6 @@ async function fetchAndRenderData() {
 
         // Update Summary Cards
         document.getElementById('total-watt').innerHTML = `${totalWatt.toFixed(1)} <span class="unit">W</span>`;
-        document.getElementById('total-amp').innerHTML = `${totalAmp.toFixed(2)} <span class="unit">A</span>`;
         document.getElementById('device-status').innerHTML = `${activeDevices.size}/3 <span class="unit">Online</span>`;
 
         // Update the active charts
