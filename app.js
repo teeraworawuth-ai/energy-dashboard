@@ -1,7 +1,97 @@
+// Custom Ruler Plugin for X-axis ticks
+const rulerPlugin = {
+    id: 'rulerPlugin',
+    afterDraw(chart) {
+        const { ctx, chartArea: { bottom, left, right }, scales: { x } } = chart;
+        if (!chart.data.labels || chart.data.labels.length === 0) return;
+        
+        ctx.save();
+        
+        // Draw the main bottom axis line
+        ctx.beginPath();
+        ctx.moveTo(left, bottom);
+        ctx.lineTo(right, bottom);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        const totalMinutes = chart.data.labels.length;
+        
+        for(let i = 0; i < totalMinutes; i += 5) { 
+            const posX = x.getPixelForValue(i);
+            if(posX < left || posX > right) continue;
+            
+            let tickLength = 5; // ขีดเล็กสุด (5 นาที)
+            let lineWidth = 1;
+            let opacity = 0.3;
+            
+            const minWithinHour = i % 60;
+            
+            if (minWithinHour === 0) {
+                tickLength = 20; // ชั่วโมง (ยาวสุด)
+                lineWidth = 2; 
+                opacity = 1.0;
+            } else if (minWithinHour === 30) {
+                tickLength = 14; // 30 นาที (ยาวรองลงมา)
+                lineWidth = 1.5; 
+                opacity = 0.8;
+            } else if (minWithinHour === 15 || minWithinHour === 45) {
+                tickLength = 9;  // 15, 45 นาที (ยาวเท่ากัน)
+                lineWidth = 1.2; 
+                opacity = 0.6;
+            } else { 
+                tickLength = 5;  // 5, 10, 20, 25, 35, 40, 50, 55 นาที (ขีดเล็กสุด)
+                lineWidth = 1;   
+                opacity = 0.4;
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(posX, bottom);
+            ctx.lineTo(posX, bottom + tickLength);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+            
+            // วาดตัวเลขเฉพาะทุกๆ 1 ชั่วโมง (นาทีที่ 0)
+            if (minWithinHour === 0) {
+                ctx.fillStyle = '#cbd5e1';
+                ctx.font = '11px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                
+                const labelText = chart.data.labels[i];
+                if (labelText) {
+                    const parts = labelText.split(' '); // ["วันที่", "22", "04:00"]
+                    if (parts.length >= 3) {
+                        const timePart = parts[2]; // "04:00"
+                        const hourStr = parseInt(timePart.split(':')[0], 10); // "4"
+                        
+                        // ถ้าเป็นเที่ยงคืน (0 นาฬิกา) ให้แสดงคำว่า "วันที่ XX" ด้วย เพื่อให้รู้ว่าขึ้นวันใหม่
+                        if (hourStr === 0) {
+                            ctx.font = 'bold 11px sans-serif';
+                            ctx.fillStyle = '#3b82f6'; // สีฟ้าเด่นๆ สำหรับขึ้นวันใหม่
+                            ctx.fillText(`${parts[0]} ${parts[1]}`, posX, bottom + 24);
+                        } else {
+                            // นอกนั้นแสดงแค่ตัวเลขชั่วโมง เช่น "1", "2", "3"
+                            ctx.font = '11px sans-serif';
+                            ctx.fillStyle = '#cbd5e1';
+                            ctx.fillText(hourStr, posX, bottom + 24);
+                        }
+                    }
+                }
+            }
+        }
+        ctx.restore();
+    }
+};
+
 // Initialize Chart configurations
 const commonOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    layout: {
+        padding: { bottom: 35 } // Leave space for our custom labels
+    },
     plugins: {
         legend: { display: false },
         tooltip: {
@@ -21,38 +111,8 @@ const commonOptions = {
     },
     scales: {
         x: {
-            grid: { 
-                // Draw grid lines based on index (1 index = 1 minute)
-                color: (ctx) => {
-                    if (ctx.index === undefined) return 'transparent';
-                    if (ctx.index % 60 === 0) return 'rgba(255, 255, 255, 0.4)'; // 60 min (Brightest)
-                    if (ctx.index % 30 === 0) return 'rgba(255, 255, 255, 0.2)'; // 30 min
-                    if (ctx.index % 15 === 0) return 'rgba(255, 255, 255, 0.1)'; // 15 min
-                    if (ctx.index % 10 === 0) return 'rgba(255, 255, 255, 0.05)';// 10 min
-                    if (ctx.index % 5 === 0)  return 'rgba(255, 255, 255, 0.02)';// 5 min (Faintest)
-                    return 'transparent';
-                },
-                lineWidth: (ctx) => {
-                    if (ctx.index === undefined) return 0;
-                    if (ctx.index % 60 === 0) return 2;   // 60 min
-                    if (ctx.index % 30 === 0) return 1.5; // 30 min
-                    return 1; // 15, 10, 5 min
-                },
-                drawTicks: false
-            },
-            ticks: { 
-                color: '#94a3b8',
-                autoSkip: false, // Force it to process all 2880 ticks for the grid lines
-                maxRotation: 0,
-                callback: function(val, index) {
-                    // Only show text label every 2 hours (120 mins) to prevent text overlap on mobile
-                    // or every 4 hours. Let's do 4 hours (240 mins) for 48-hour span = 12 labels
-                    if (index % 240 === 0) {
-                        return this.getLabelForValue(val);
-                    }
-                    return '';
-                }
-            }
+            grid: { display: false, drawBorder: false },
+            ticks: { display: false } // We draw our own ticks and labels in rulerPlugin
         },
         y: {
             grid: { color: 'rgba(255, 255, 255, 0.05)' },
@@ -96,7 +156,8 @@ function initChart(ctxId, color) {
                 tension: 0.1
             }]
         },
-        options: commonOptions
+        options: commonOptions,
+        plugins: [rulerPlugin]
     });
 }
 
