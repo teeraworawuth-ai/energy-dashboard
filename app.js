@@ -107,6 +107,21 @@ const commonOptions = {
                     return ` ${context.dataset.label}: ${context.raw} W`;
                 }
             }
+        },
+        zoom: {
+            pan: {
+                enabled: true,
+                mode: 'x'
+            },
+            zoom: {
+                wheel: {
+                    enabled: true,
+                },
+                pinch: {
+                    enabled: true
+                },
+                mode: 'x'
+            }
         }
     },
     scales: {
