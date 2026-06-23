@@ -95,8 +95,9 @@ const commonOptions = {
             borderColor: 'rgba(255,255,255,0.1)',
             borderWidth: 1,
             callbacks: {
+                title: () => null, // ซ่อนคำอธิบายวันที่/เวลา ด้านบน tooltip
                 label: function(context) {
-                    return ` ${context.dataset.label}: ${context.raw} W`;
+                    return `${context.raw} W`; // แสดงแค่ตัวเลขวัตต์
                 }
             }
         },
