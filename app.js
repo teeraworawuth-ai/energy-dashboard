@@ -77,38 +77,10 @@ const commonOptions = {
     layout: {
         padding: { bottom: 35 } // Leave space for our custom labels
     },
+    events: [], // ปิดการรับส่งสัมผัสทุกชนิดบนกราฟ ทำให้กราฟกลายเป็นเหมือนรูปภาพธรรมดา เลื่อนจอผ่านได้ 100%
     plugins: {
         legend: { display: false },
-        tooltip: {
-            mode: 'index',
-            intersect: false,
-            backgroundColor: 'rgba(15, 23, 42, 0.9)',
-            titleColor: '#fff',
-            bodyColor: '#fff',
-            borderColor: 'rgba(255,255,255,0.1)',
-            borderWidth: 1,
-            callbacks: {
-                title: () => null, // ซ่อนคำอธิบายวันที่/เวลา ด้านบน tooltip
-                label: function(context) {
-                    return `${context.raw} W`; // แสดงแค่ตัวเลขวัตต์
-                }
-            }
-        },
-        zoom: {
-            pan: {
-                enabled: false, // ปิดการเลื่อนกราฟด้วยนิ้วเดียว เพื่อให้เลื่อนหน้าจอขึ้นลงได้อย่างอิสระ 100%
-                mode: 'x'
-            },
-            zoom: {
-                wheel: {
-                    enabled: true,
-                },
-                pinch: {
-                    enabled: true // ยังสามารถใช้ 2 นิ้วถ่างซูมกราฟได้ตามปกติ
-                },
-                mode: 'x'
-            }
-        }
+        tooltip: { enabled: false } // ปิดการแสดงผลกล่องข้อความ Watt เมื่อแตะกราฟ
     },
     scales: {
         x: {
@@ -123,11 +95,6 @@ const commonOptions = {
             },
             beginAtZero: true
         }
-    },
-    interaction: {
-        mode: 'nearest',
-        axis: 'x',
-        intersect: false
     }
 };
 
