@@ -157,7 +157,7 @@ h1 {
 }
 
 .chart-container {
-    height: 220px;
+    height: 160px;
     display: flex;
     flex-direction: column;
 }
@@ -299,7 +299,7 @@ h1 {
     }
     
     .chart-container {
-        height: 200px;
+        height: 140px;
     }
     
     .sidebar {

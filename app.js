@@ -96,16 +96,15 @@ const commonOptions = {
         },
         zoom: {
             pan: {
-                enabled: true,
-                mode: 'x',
-                threshold: 20 // ป้องกันนิ้วติดกราฟเวลารูดจอขึ้นลง ต้องตั้งใจไถซ้ายขวาจริงๆ ถึงจะเลื่อนกราฟ
+                enabled: false, // ปิดการเลื่อนกราฟด้วยนิ้วเดียว เพื่อให้เลื่อนหน้าจอขึ้นลงได้อย่างอิสระ 100%
+                mode: 'x'
             },
             zoom: {
                 wheel: {
                     enabled: true,
                 },
                 pinch: {
-                    enabled: true
+                    enabled: true // ยังสามารถใช้ 2 นิ้วถ่างซูมกราฟได้ตามปกติ
                 },
                 mode: 'x'
             }
@@ -118,7 +117,10 @@ const commonOptions = {
         },
         y: {
             grid: { color: 'rgba(255, 255, 255, 0.05)' },
-            ticks: { color: '#94a3b8' },
+            ticks: { 
+                color: '#94a3b8',
+                font: { size: 9 } // ลดขนาดตัวเลขแกน Y ไม่ให้ซ้อนทับกัน
+            },
             beginAtZero: true
         }
     },
@@ -322,8 +324,8 @@ async function fetchAndRenderData() {
 // Initialize on load
 document.addEventListener('DOMContentLoaded', () => {
     charts['A101'] = initChart('chart-A101', '#3b82f6'); // Blue
-    charts['B101'] = initChart('chart-B101', '#10b981'); // Green
-    charts['C101'] = initChart('chart-C101', '#f59e0b'); // Yellow
+    charts['B101'] = initChart('chart-B101', '#3b82f6'); // Blue
+    charts['C101'] = initChart('chart-C101', '#3b82f6'); // Blue
 
     renderDateButtons();
     fetchAndRenderData();
