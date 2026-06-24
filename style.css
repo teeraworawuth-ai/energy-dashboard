@@ -157,32 +157,27 @@ h1 {
 }
 
 .chart-container {
-    height: 160px;
+    padding: 1rem;
     display: flex;
     flex-direction: column;
-}
-
-.chart-container canvas {
-    flex: 1;
-    width: 100% !important;
 }
 
 .chart-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
 }
 
 .chart-header h3 {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
     font-weight: 600;
 }
 
 .badge {
-    padding: 0.3rem 0.8rem;
+    padding: 0.2rem 0.6rem;
     border-radius: 12px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 600;
 }
 
@@ -194,6 +189,30 @@ h1 {
 .badge.inactive {
     background-color: rgba(255, 255, 255, 0.1);
     color: var(--text-secondary);
+}
+
+/* Native Horizontal Scroll Wrappers */
+.chart-scroll-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+}
+
+.chart-scroll-wrapper::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+}
+
+.chart-inner {
+    width: 200%; /* Canvas is 2x container width */
+    height: 80px; /* Smallest height as requested */
+    position: relative;
+}
+
+.chart-inner canvas {
+    width: 100% !important;
+    height: 100% !important;
 }
 
 /* Date Filter Row */
@@ -294,12 +313,19 @@ h1 {
         grid-template-columns: 1fr;
     }
     
+    /* Request: 2 charts per row on mobile */
     .charts-section {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem; /* tight gap */
     }
     
-    .chart-container {
-        height: 140px;
+    /* Make glass padding smaller on mobile */
+    .chart-container.glass {
+        padding: 0.5rem; 
+    }
+
+    .chart-header h3 {
+        font-size: 0.8rem; /* even smaller text */
     }
     
     .sidebar {

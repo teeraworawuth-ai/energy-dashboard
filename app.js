@@ -1,18 +1,3 @@
-// ติดตามการซูมหน้าจอของเบราว์เซอร์
-let currentZoomScale = 1;
-if (window.visualViewport) {
-    currentZoomScale = window.visualViewport.scale;
-    window.visualViewport.addEventListener('resize', () => {
-        if (Math.abs(currentZoomScale - window.visualViewport.scale) > 0.1) {
-            currentZoomScale = window.visualViewport.scale;
-            // สั่งให้กราฟวาดตัวเองใหม่เพื่อแสดงตัวเลข 20, 40
-            Object.values(charts).forEach(chart => {
-                if(chart) chart.update('none');
-            });
-        }
-    });
-}
-
 // Custom Ruler Plugin for X-axis ticks
 const rulerPlugin = {
     id: 'rulerPlugin',
@@ -31,28 +16,21 @@ const rulerPlugin = {
         ctx.stroke();
 
         const totalMinutes = chart.data.labels.length;
-        const isZoomedIn = currentZoomScale >= 1.5; // ถ่างนิ้วเกิน 1.5 เท่า ถือว่าซูม
         
         for(let i = 0; i < totalMinutes; i++) { 
             const minWithinHour = i % 60;
             
-            // Only draw ticks at minutes 00, 20, and 40
-            if (minWithinHour !== 0 && minWithinHour !== 20 && minWithinHour !== 40) {
+            // Only draw ticks at minutes 00
+            if (minWithinHour !== 0) {
                 continue;
             }
 
             const posX = x.getPixelForValue(i);
             if(posX < left || posX > right) continue;
             
-            let tickLength = 5; // ขีดย่อย
-            let lineWidth = 1;
-            let opacity = 0.5;
-            
-            if (minWithinHour === 0) {
-                tickLength = 15; // ขีดชั่วโมง (ยาวสุด)
-                lineWidth = 1.5;
-                opacity = 0.8;
-            }
+            let tickLength = 10; // ขีดชั่วโมง
+            let lineWidth = 1.5;
+            let opacity = 0.8;
 
             ctx.beginPath();
             ctx.moveTo(posX, bottom);
@@ -61,36 +39,24 @@ const rulerPlugin = {
             ctx.lineWidth = lineWidth;
             ctx.stroke();
             
-            // วาดตัวเลขบอกเวลา
-            if (minWithinHour === 0) {
-                // ถ้าไม่ได้ซูม วาดทุกๆ 2 ชม. แต่ถ้าซูม วาดทุกๆ 1 ชม.
-                if (isZoomedIn || i % 120 === 0) {
-                    ctx.fillStyle = '#cbd5e1';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'top';
-                    
-                    const labelText = chart.data.labels[i];
-                    if (labelText) {
-                        const parts = labelText.split(' '); 
-                        if (parts.length >= 3) {
-                            const timePart = parts[2]; 
-                            const hourStr = parseInt(timePart.split(':')[0], 10); 
-                            
-                            ctx.font = '11px sans-serif';
-                            ctx.fillStyle = '#cbd5e1';
-                            ctx.fillText(hourStr, posX, bottom + 20);
-                        }
-                    }
-                }
-            }
-
-            // ถ้าระบบตรวจพบว่าผู้ใช้กำลังซูมจออยู่ ให้โชว์เลข 20 กับ 40 นาทีด้วย
-            if (isZoomedIn && (minWithinHour === 20 || minWithinHour === 40)) {
-                ctx.font = '9px sans-serif';
-                ctx.fillStyle = '#94a3b8';
+            // วาดตัวเลขบอกเวลาเฉพาะชั่วโมงแบบคู่ (6, 8, 10, 12...)
+            if (minWithinHour === 0 && i % 120 === 0) {
+                ctx.fillStyle = '#cbd5e1';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'top';
-                ctx.fillText(minWithinHour, posX, bottom + 8);
+                
+                const labelText = chart.data.labels[i];
+                if (labelText) {
+                    const parts = labelText.split(' '); 
+                    if (parts.length >= 3) {
+                        const timePart = parts[2]; 
+                        const hourStr = parseInt(timePart.split(':')[0], 10); 
+                        
+                        ctx.font = '10px sans-serif';
+                        ctx.fillStyle = '#cbd5e1';
+                        ctx.fillText(hourStr, posX, bottom + 12);
+                    }
+                }
             }
         }
         ctx.restore();
@@ -338,7 +304,7 @@ async function fetchAndRenderData() {
         updateChartsWithActiveDates();
 
     } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error("Error updating charts:", error);
     }
 }
 
@@ -350,6 +316,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderDateButtons();
     fetchAndRenderData();
+    
+    // Set default scroll view to show 12:00 to 00:00 (which is 25% of the scroll width)
+    // Add a slight delay to ensure the browser has rendered the wide canvases
+    setTimeout(() => {
+        document.querySelectorAll('.chart-scroll-wrapper').forEach(wrapper => {
+            if (wrapper) {
+                wrapper.scrollLeft = wrapper.scrollWidth * 0.25;
+            }
+        });
+    }, 500);
     
     // Refresh every 1 minute to match polling
     setInterval(fetchAndRenderData, 60000); 
