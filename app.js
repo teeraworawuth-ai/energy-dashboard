@@ -1,3 +1,18 @@
+// ติดตามการซูมหน้าจอของเบราว์เซอร์
+let currentZoomScale = 1;
+if (window.visualViewport) {
+    currentZoomScale = window.visualViewport.scale;
+    window.visualViewport.addEventListener('resize', () => {
+        if (Math.abs(currentZoomScale - window.visualViewport.scale) > 0.1) {
+            currentZoomScale = window.visualViewport.scale;
+            // สั่งให้กราฟวาดตัวเองใหม่เพื่อแสดงตัวเลข 20, 40
+            Object.values(charts).forEach(chart => {
+                if(chart) chart.update('none');
+            });
+        }
+    });
+}
+
 // Custom Ruler Plugin for X-axis ticks
 const rulerPlugin = {
     id: 'rulerPlugin',
@@ -16,6 +31,7 @@ const rulerPlugin = {
         ctx.stroke();
 
         const totalMinutes = chart.data.labels.length;
+        const isZoomedIn = currentZoomScale >= 1.5; // ถ่างนิ้วเกิน 1.5 เท่า ถือว่าซูม
         
         for(let i = 0; i < totalMinutes; i++) { 
             const minWithinHour = i % 60;
@@ -45,25 +61,36 @@ const rulerPlugin = {
             ctx.lineWidth = lineWidth;
             ctx.stroke();
             
-            // วาดตัวเลขบอกเวลาเฉพาะชั่วโมง (นาทีที่ 0) และวาดทุกๆ 2 ชั่วโมง (120 นาที) เพื่อไม่ให้รก
-            if (minWithinHour === 0 && i % 120 === 0) {
-                ctx.fillStyle = '#cbd5e1';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'top';
-                
-                const labelText = chart.data.labels[i];
-                if (labelText) {
-                    const parts = labelText.split(' '); // ["วันที่", "22", "04:00"]
-                    if (parts.length >= 3) {
-                        const timePart = parts[2]; // "04:00"
-                        const hourStr = parseInt(timePart.split(':')[0], 10); // "4"
-                        
-                        ctx.font = '11px sans-serif';
-                        ctx.fillStyle = '#cbd5e1';
-                        // แสดงแค่ตัวเลขชั่วโมง เช่น "0", "2", "4", "6"
-                        ctx.fillText(hourStr, posX, bottom + 20);
+            // วาดตัวเลขบอกเวลา
+            if (minWithinHour === 0) {
+                // ถ้าไม่ได้ซูม วาดทุกๆ 2 ชม. แต่ถ้าซูม วาดทุกๆ 1 ชม.
+                if (isZoomedIn || i % 120 === 0) {
+                    ctx.fillStyle = '#cbd5e1';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'top';
+                    
+                    const labelText = chart.data.labels[i];
+                    if (labelText) {
+                        const parts = labelText.split(' '); 
+                        if (parts.length >= 3) {
+                            const timePart = parts[2]; 
+                            const hourStr = parseInt(timePart.split(':')[0], 10); 
+                            
+                            ctx.font = '11px sans-serif';
+                            ctx.fillStyle = '#cbd5e1';
+                            ctx.fillText(hourStr, posX, bottom + 20);
+                        }
                     }
                 }
+            }
+
+            // ถ้าระบบตรวจพบว่าผู้ใช้กำลังซูมจออยู่ ให้โชว์เลข 20 กับ 40 นาทีด้วย
+            if (isZoomedIn && (minWithinHour === 20 || minWithinHour === 40)) {
+                ctx.font = '9px sans-serif';
+                ctx.fillStyle = '#94a3b8';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                ctx.fillText(minWithinHour, posX, bottom + 8);
             }
         }
         ctx.restore();
@@ -217,7 +244,8 @@ function updateChartsWithActiveDates() {
         'C101': { times: [], watts: [] }
     };
 
-    let lastKnownWatt = { 'A101': 0, 'B101': 0, 'C101': 0 };
+    let lastKnownWatt = { 'A101': null, 'B101': null, 'C101': null };
+    let lastDataTime = { 'A101': null, 'B101': null, 'C101': null };
     const now = new Date();
 
     // Pad exactly 1441 points (from 06:00 to 06:00)
@@ -239,13 +267,18 @@ function updateChartsWithActiveDates() {
                 return;
             }
             
-            // If we have data for this exact minute, use it. Otherwise use last known or 0.
+            // ถ้ามีข้อมูลในนาทีนี้ ให้จำค่าและจำเวลาไว้
             if (dataMap[room][key] !== undefined) {
                 lastKnownWatt[room] = dataMap[room][key];
-            } else if (i === 0) {
-                lastKnownWatt[room] = 0; // force start at 0 if no data
+                lastDataTime[room] = currentDate;
             }
-            groupedData[room].watts.push(lastKnownWatt[room]);
+            
+            // ถ้าขาดการติดต่อไปเกิน 5 นาที (ออฟไลน์) หรือยังไม่เคยมีข้อมูลเลย ให้ใส่ null (กราฟแหว่ง)
+            if (lastDataTime[room] && (currentDate - lastDataTime[room]) <= 5 * 60000) {
+                groupedData[room].watts.push(lastKnownWatt[room]);
+            } else {
+                groupedData[room].watts.push(null);
+            }
         });
     }
 
