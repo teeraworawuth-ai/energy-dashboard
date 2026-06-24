@@ -313,6 +313,20 @@ async function fetchAndRenderData() {
         document.getElementById('total-watt').innerHTML = `${totalWatt.toFixed(1)} <span class="unit">W</span>`;
         document.getElementById('device-status').innerHTML = `${activeDevices.size}/3 <span class="unit">Online</span>`;
 
+        // Update Room Badges
+        ['A101', 'B101', 'C101'].forEach(room => {
+            const badge = document.getElementById(`badge-${room}`);
+            if (badge) {
+                if (activeDevices.has(room)) {
+                    badge.className = 'badge active';
+                    badge.innerText = 'กำลังทำงาน';
+                } else {
+                    badge.className = 'badge inactive';
+                    badge.innerText = 'ออฟไลน์';
+                }
+            }
+        });
+
         // Update the active charts
         updateChartsWithActiveDates();
 
