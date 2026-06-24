@@ -317,13 +317,13 @@ document.addEventListener('DOMContentLoaded', () => {
     renderDateButtons();
     fetchAndRenderData();
     
-    // Set default scroll view to show 10:00 to 00:00 clearly
+    // Set default scroll view to show 12:00 to 00:00 clearly with padding
     // Add a slight delay to ensure the browser has rendered the wide canvases
     setTimeout(() => {
         document.querySelectorAll('.chart-scroll-wrapper').forEach(wrapper => {
             if (wrapper) {
-                // 14.5% of scrollWidth puts ~09:30 at the left edge
-                wrapper.scrollLeft = wrapper.scrollWidth * 0.145;
+                // 22.2% of scrollWidth puts ~11:20 at the left edge
+                wrapper.scrollLeft = wrapper.scrollWidth * 0.222;
             }
         });
     }, 500);
