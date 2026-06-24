@@ -205,7 +205,7 @@ h1 {
 }
 
 .chart-inner {
-    width: 200%; /* Canvas is 2x container width */
+    width: 160%; /* Canvas is 1.6x container width */
     height: 80px; /* Smallest height as requested */
     position: relative;
 }
