@@ -52,7 +52,7 @@ const rulerPlugin = {
                         const timePart = parts[2]; 
                         const hourStr = parseInt(timePart.split(':')[0], 10); 
                         
-                        ctx.font = '10px sans-serif';
+                        ctx.font = '9px sans-serif';
                         ctx.fillStyle = '#cbd5e1';
                         ctx.fillText(hourStr, posX, bottom + 12);
                     }
@@ -82,11 +82,9 @@ const commonOptions = {
         },
         y: {
             grid: { color: 'rgba(255, 255, 255, 0.05)' },
-            ticks: { 
-                color: '#94a3b8',
-                font: { size: 9 } // ลดขนาดตัวเลขแกน Y ไม่ให้ซ้อนทับกัน
-            },
-            beginAtZero: true
+            ticks: { display: false }, // ซ่อน Y-axis ตัวเดิมของกราฟ
+            beginAtZero: true,
+            suggestedMax: 10
         }
     }
 };
@@ -254,6 +252,23 @@ function updateChartsWithActiveDates() {
             charts[room].data.labels = groupedData[room].times;
             charts[room].data.datasets[0].data = groupedData[room].watts;
             charts[room].update('none');
+
+            // Set fixed custom HTML Y-axis to match chartArea exactly
+            const yAxisDiv = document.getElementById(`y-axis-${room}`);
+            const chartArea = charts[room].chartArea;
+            if (yAxisDiv && chartArea) {
+                // Position exactly alongside the chart's drawing area
+                yAxisDiv.style.top = `${chartArea.top}px`;
+                yAxisDiv.style.height = `${chartArea.bottom - chartArea.top}px`;
+                
+                // Read the actual Y scale calculated by Chart.js
+                const yMax = charts[room].scales.y.max || 10;
+                yAxisDiv.innerHTML = `
+                    <span style="font-size: 9px; color: #94a3b8; font-weight: 600;">${Math.round(yMax)}</span>
+                    <span style="font-size: 9px; color: #94a3b8; font-weight: 600;">${Math.round(yMax / 2)}</span>
+                    <span style="font-size: 9px; color: #94a3b8; font-weight: 600;">0</span>
+                `;
+            }
         }
     });
 }
