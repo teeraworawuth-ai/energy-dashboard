@@ -218,6 +218,7 @@ function updateChartsWithActiveDates() {
     };
 
     let lastKnownWatt = { 'A101': 0, 'B101': 0, 'C101': 0 };
+    const now = new Date();
 
     // Pad exactly 1441 points (from 06:00 to 06:00)
     for (let i = 0; i <= 1440; i++) {
@@ -231,6 +232,12 @@ function updateChartsWithActiveDates() {
 
         ['A101', 'B101', 'C101'].forEach(room => {
             groupedData[room].times.push(timeLabel);
+            
+            // ถ้าเวลาของจุดนี้ เป็นอนาคต (เลยเวลาปัจจุบันไปแล้ว) ให้ใส่ค่า null เพื่อไม่ให้วาดเส้นกราฟ
+            if (currentDate > now) {
+                groupedData[room].watts.push(null);
+                return;
+            }
             
             // If we have data for this exact minute, use it. Otherwise use last known or 0.
             if (dataMap[room][key] !== undefined) {
