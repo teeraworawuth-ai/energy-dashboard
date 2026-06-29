@@ -310,7 +310,9 @@ async function fetchAndRenderData() {
 // New function to fetch live status for badges and buttons
 async function fetchDeviceStatus() {
     try {
-        const response = await fetch('/api/devices/status');
+        const response = await fetch('https://hotel-energy-app-v2.loca.lt/api/devices/status', {
+            headers: { 'Bypass-Tunnel-Reminder': 'true' }
+        });
         const status = await response.json();
         
         ['A101', 'B101', 'C101'].forEach(room => {
@@ -362,9 +364,12 @@ window.toggleDevice = async function(room) {
     btn.innerText = 'กำลังสั่ง...';
     
     try {
-        const res = await fetch(`/api/device/${room}/toggle`, {
+        const res = await fetch(`https://hotel-energy-app-v2.loca.lt/api/device/${room}/toggle`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Bypass-Tunnel-Reminder': 'true'
+            },
             body: JSON.stringify({ state: newState })
         });
         const data = await res.json();
