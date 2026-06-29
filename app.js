@@ -311,7 +311,9 @@ async function fetchAndRenderData() {
 async function fetchDeviceStatus() {
     try {
         const response = await fetch('https://hotel-energy-app-v2.loca.lt/api/devices/status', {
-            headers: { 'Bypass-Tunnel-Reminder': 'true' }
+            headers: {
+                'Bypass-Tunnel-Reminder': 'true'
+            }
         });
         const status = await response.json();
         
@@ -382,6 +384,27 @@ window.toggleDevice = async function(room) {
     
     // Refresh status shortly after command
     setTimeout(fetchDeviceStatus, 1500);
+};
+
+window.resetDevice = async function(room) {
+    if (!confirm(`ยืนยันการรีเซ็ตการเชื่อมต่อกับอุปกรณ์ ${room}?`)) return;
+    
+    try {
+        const res = await fetch(`https://hotel-energy-app-v2.loca.lt/api/device/${room}/reset`, {
+            method: 'POST',
+            headers: {
+                'Bypass-Tunnel-Reminder': 'true'
+            }
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(`สั่งรีเซ็ต ${room} แล้ว กรุณารอ 5-10 วินาทีเพื่อให้ระบบพยายามเชื่อมต่อใหม่`);
+        } else {
+            alert('เกิดข้อผิดพลาด: ' + data.error);
+        }
+    } catch (err) {
+        alert('ไม่สามารถส่งคำสั่งรีเซ็ตได้');
+    }
 };
 
 // Initialize on load
