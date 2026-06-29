@@ -152,7 +152,7 @@ h1 {
 /* Charts Section */
 .charts-section {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
 }
 
@@ -313,9 +313,9 @@ h1 {
         grid-template-columns: 1fr;
     }
     
-    /* Request: 3 charts per row on mobile */
+    /* Request: 2 charts per row on mobile */
     .charts-section {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: 0.5rem; /* tight gap */
     }
     
