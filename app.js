@@ -275,11 +275,7 @@ function updateChartsWithActiveDates() {
 
 async function fetchAndRenderData() {
     try {
-        const response = await fetch('https://hotel-energy-app-v2.loca.lt/api/energy-data', {
-            headers: {
-                'Bypass-Tunnel-Reminder': 'true'
-            }
-        });
+        const response = await fetch('/api/energy-data');
         const data = await response.json();
         allFetchedData = data;
 
@@ -314,11 +310,7 @@ async function fetchAndRenderData() {
 // New function to fetch live status for badges and buttons
 async function fetchDeviceStatus() {
     try {
-        const response = await fetch('https://hotel-energy-app-v2.loca.lt/api/devices/status', {
-            headers: {
-                'Bypass-Tunnel-Reminder': 'true'
-            }
-        });
+        const response = await fetch('/api/status');
         const status = await response.json();
         
         ['A101', 'B101', 'C101'].forEach(room => {
@@ -370,13 +362,10 @@ window.toggleDevice = async function(room) {
     btn.innerText = 'กำลังสั่ง...';
     
     try {
-        const res = await fetch(`https://hotel-energy-app-v2.loca.lt/api/device/${room}/toggle`, {
+        const res = await fetch('/api/toggle', {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Bypass-Tunnel-Reminder': 'true'
-            },
-            body: JSON.stringify({ state: newState })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ room: room, state: newState })
         });
         const data = await res.json();
         if (!data.success) {
@@ -391,24 +380,7 @@ window.toggleDevice = async function(room) {
 };
 
 window.resetDevice = async function(room) {
-    if (!confirm(`ยืนยันการรีเซ็ตการเชื่อมต่อกับอุปกรณ์ ${room}?`)) return;
-    
-    try {
-        const res = await fetch(`https://hotel-energy-app-v2.loca.lt/api/device/${room}/reset`, {
-            method: 'POST',
-            headers: {
-                'Bypass-Tunnel-Reminder': 'true'
-            }
-        });
-        const data = await res.json();
-        if (data.success) {
-            alert(`สั่งรีเซ็ต ${room} แล้ว กรุณารอ 5-10 วินาทีเพื่อให้ระบบพยายามเชื่อมต่อใหม่`);
-        } else {
-            alert('เกิดข้อผิดพลาด: ' + data.error);
-        }
-    } catch (err) {
-        alert('ไม่สามารถส่งคำสั่งรีเซ็ตได้');
-    }
+    if (!confirm(`ระบบนี้ใช้ Cloud API แล้ว ไม่จำเป็นต้องรีเซ็ตการเชื่อมต่อผ่าน Network ภายในครับ`)) return;
 };
 
 // Initialize on load
