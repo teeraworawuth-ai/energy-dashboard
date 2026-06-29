@@ -191,6 +191,39 @@ h1 {
     color: var(--text-secondary);
 }
 
+/* Toggle Buttons */
+.toggle-btn {
+    padding: 0.25rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+.toggle-btn.btn-on {
+    background-color: rgba(16, 185, 129, 0.2);
+    color: var(--success-color);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+}
+
+.toggle-btn.btn-off {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+}
+
+.toggle-btn:disabled {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.6;
+}
+
 /* Native Horizontal Scroll Wrappers */
 .chart-scroll-wrapper {
     width: 100%;

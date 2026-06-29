@@ -297,23 +297,7 @@ async function fetchAndRenderData() {
             }
         });
 
-        // Update Summary Cards
-        document.getElementById('total-watt').innerHTML = `${totalWatt.toFixed(1)} <span class="unit">W</span>`;
-        document.getElementById('device-status').innerHTML = `${activeDevices.size}/3 <span class="unit">Online</span>`;
-
-        // Update Room Badges
-        ['A101', 'B101', 'C101'].forEach(room => {
-            const badge = document.getElementById(`badge-${room}`);
-            if (badge) {
-                if (activeDevices.has(room)) {
-                    badge.className = 'badge active';
-                    badge.innerText = 'กำลังทำงาน';
-                } else {
-                    badge.className = 'badge inactive';
-                    badge.innerText = 'ออฟไลน์';
-                }
-            }
-        });
+        // Update Summary Cards Removed
 
         // Update the active charts
         updateChartsWithActiveDates();
@@ -323,6 +307,78 @@ async function fetchAndRenderData() {
     }
 }
 
+// New function to fetch live status for badges and buttons
+async function fetchDeviceStatus() {
+    try {
+        const response = await fetch('/api/devices/status');
+        const status = await response.json();
+        
+        ['A101', 'B101', 'C101'].forEach(room => {
+            const btn = document.getElementById(`toggle-${room}`);
+            const badge = document.getElementById(`badge-${room}`);
+            const roomStatus = status[room];
+            
+            if (roomStatus && roomStatus.connected) {
+                badge.className = 'badge active';
+                badge.innerText = 'ออนไลน์';
+                
+                btn.disabled = false;
+                if (roomStatus.state === true) {
+                    btn.className = 'toggle-btn btn-on';
+                    btn.innerText = 'เปิดอยู่ (ON)';
+                } else if (roomStatus.state === false) {
+                    btn.className = 'toggle-btn btn-off';
+                    btn.innerText = 'ปิดอยู่ (OFF)';
+                } else {
+                    btn.className = 'toggle-btn';
+                    btn.innerText = 'ไม่ทราบสถานะ';
+                }
+            } else {
+                badge.className = 'badge inactive';
+                badge.innerText = 'ออฟไลน์';
+                btn.disabled = true;
+                btn.className = 'toggle-btn';
+                btn.innerText = 'ออฟไลน์';
+            }
+        });
+    } catch (err) {
+        console.error("Error fetching live status:", err);
+    }
+}
+
+// Global toggle function
+window.toggleDevice = async function(room) {
+    const btn = document.getElementById(`toggle-${room}`);
+    const currentState = btn.classList.contains('btn-on');
+    const newState = !currentState;
+    
+    if (!newState) {
+        // Turning OFF requires confirmation
+        const confirmOff = confirm(`คุณแน่ใจหรือไม่ว่าต้องการ "ปิดไฟ" ห้อง ${room}?`);
+        if (!confirmOff) return;
+    }
+    
+    btn.disabled = true;
+    btn.innerText = 'กำลังสั่ง...';
+    
+    try {
+        const res = await fetch(`/api/device/${room}/toggle`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ state: newState })
+        });
+        const data = await res.json();
+        if (!data.success) {
+            alert('เกิดข้อผิดพลาด: ' + data.error);
+        }
+    } catch (err) {
+        alert('ไม่สามารถส่งคำสั่งได้');
+    }
+    
+    // Refresh status shortly after command
+    setTimeout(fetchDeviceStatus, 1500);
+};
+
 // Initialize on load
 document.addEventListener('DOMContentLoaded', () => {
     charts['A101'] = initChart('chart-A101', '#3b82f6'); // Blue
@@ -331,7 +387,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderDateButtons();
     fetchAndRenderData();
+    fetchDeviceStatus();
     
+    // Location Filtering Logic
+    const navLinks = document.querySelectorAll('#location-nav li');
+    const chartContainers = document.querySelectorAll('.chart-container');
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Remove active class from all links
+            navLinks.forEach(nav => nav.classList.remove('active'));
+            
+            // Add active class to clicked link
+            link.classList.add('active');
+            
+            const selectedLoc = link.getAttribute('data-loc');
+            
+            // Filter containers
+            chartContainers.forEach(container => {
+                if (selectedLoc === 'all') {
+                    container.style.display = 'block';
+                } else {
+                    if (container.getAttribute('data-loc') === selectedLoc) {
+                        container.style.display = 'block';
+                    } else {
+                        container.style.display = 'none';
+                    }
+                }
+            });
+        });
+    });
+
     // Set default scroll view to show 12:00 to 00:00 clearly with padding
     // Add a slight delay to ensure the browser has rendered the wide canvases
     setTimeout(() => {
@@ -343,6 +431,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }, 500);
     
-    // Refresh every 1 minute to match polling
+    // Refresh chart data every 1 minute
     setInterval(fetchAndRenderData, 60000); 
+    // Refresh live status every 5 seconds
+    setInterval(fetchDeviceStatus, 5000);
 });

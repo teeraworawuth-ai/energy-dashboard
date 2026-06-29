@@ -18,10 +18,11 @@
                 <h2>⚡ EnergyFlow</h2>
                 <p>Smart Hotel Monitor</p>
             </div>
-            <ul class="nav-links">
-                <li class="active"><a href="#">📊 Dashboard</a></li>
-                <li><a href="#">🏢 Buildings</a></li>
-                <li><a href="#">⚙️ Settings</a></li>
+            <ul class="nav-links" id="location-nav">
+                <li class="active" data-loc="all"><a href="#">📊 ดูทั้งหมด (All)</a></li>
+                <li data-loc="soi1"><a href="#">🏢 ซอย 1</a></li>
+                <li data-loc="soi2"><a href="#">🏢 ซอย 2</a></li>
+                <li data-loc="samiya"><a href="#">🏢 ซามีญ่า</a></li>
             </ul>
         </aside>
 
@@ -34,18 +35,7 @@
                 </div>
             </header>
 
-            <!-- Summary Cards -->
-            <section class="summary-cards">
-                <div class="card glass">
-                    <h3>ใช้งานกำลังไฟรวม (Watt)</h3>
-                    <div class="value" id="total-watt">0.00 <span class="unit">W</span></div>
-                </div>
-
-                <div class="card glass">
-                    <h3>สถานะอุปกรณ์</h3>
-                    <div class="value" id="device-status">3/3 <span class="unit">Online</span></div>
-                </div>
-            </section>
+            <!-- Summary Cards Removed -->
 
             <!-- Date Filter Row -->
             <section class="date-filter-container glass">
@@ -60,11 +50,14 @@
 
             <!-- Charts Section -->
             <section class="charts-section">
-                <!-- Location 1 / Building A -->
-                <div class="chart-container glass p-2">
+                <!-- Location 1 / Soi 1 -->
+                <div class="chart-container glass p-2" id="container-A101" data-loc="soi1">
                     <div class="chart-header">
-                        <h3>🏢 อาคาร A - ห้อง A101</h3>
-                        <span class="badge active" id="badge-A101">กำลังทำงาน</span>
+                        <h3>🏢 ซอย 1 - ห้อง A101</h3>
+                        <div class="header-controls" style="display: flex; gap: 8px; align-items: center;">
+                            <button class="toggle-btn" id="toggle-A101" onclick="toggleDevice('A101')" disabled>กำลังโหลด...</button>
+                            <span class="badge active" id="badge-A101">กำลังทำงาน</span>
+                        </div>
                     </div>
                     <div class="chart-body" style="position: relative;">
                         <!-- Custom Fixed Y-Axis -->
@@ -78,11 +71,14 @@
                     </div>
                 </div>
                 
-                <!-- Location 2 / Building B -->
-                <div class="chart-container glass p-2">
+                <!-- Location 2 / Soi 2 -->
+                <div class="chart-container glass p-2" id="container-B101" data-loc="soi2">
                     <div class="chart-header">
-                        <h3>🏢 อาคาร B - ห้อง B101</h3>
-                        <span class="badge inactive" id="badge-B101">สแตนด์บาย</span>
+                        <h3>🏢 ซอย 2 - ห้อง B101</h3>
+                        <div class="header-controls" style="display: flex; gap: 8px; align-items: center;">
+                            <button class="toggle-btn" id="toggle-B101" onclick="toggleDevice('B101')" disabled>กำลังโหลด...</button>
+                            <span class="badge inactive" id="badge-B101">สแตนด์บาย</span>
+                        </div>
                     </div>
                     <div class="chart-body" style="position: relative;">
                         <!-- Custom Fixed Y-Axis -->
@@ -96,11 +92,14 @@
                     </div>
                 </div>
 
-                <!-- Location 3 / Building C -->
-                <div class="chart-container glass p-2">
+                <!-- Location 3 / Samiya -->
+                <div class="chart-container glass p-2" id="container-C101" data-loc="samiya">
                     <div class="chart-header">
-                        <h3>🏢 อาคาร C - ห้อง C101</h3>
-                        <span class="badge inactive" id="badge-C101">สแตนด์บาย</span>
+                        <h3>🏢 ซามีญ่า - ห้อง C101</h3>
+                        <div class="header-controls" style="display: flex; gap: 8px; align-items: center;">
+                            <button class="toggle-btn" id="toggle-C101" onclick="toggleDevice('C101')" disabled>กำลังโหลด...</button>
+                            <span class="badge inactive" id="badge-C101">สแตนด์บาย</span>
+                        </div>
                     </div>
                     <div class="chart-body" style="position: relative;">
                         <!-- Custom Fixed Y-Axis -->
