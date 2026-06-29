@@ -275,7 +275,11 @@ function updateChartsWithActiveDates() {
 
 async function fetchAndRenderData() {
     try {
-        const response = await fetch('/api/energy-data');
+        const response = await fetch('https://hotel-energy-app-v2.loca.lt/api/energy-data', {
+            headers: {
+                'Bypass-Tunnel-Reminder': 'true'
+            }
+        });
         const data = await response.json();
         allFetchedData = data;
 
