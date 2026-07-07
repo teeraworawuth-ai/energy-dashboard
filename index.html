@@ -123,8 +123,15 @@
         <div class="modal-content glass">
             <button id="modal-close" class="modal-close-btn">&times;</button>
             <h3 id="modal-title" style="margin-bottom: 1rem; font-size: 1.2rem;"></h3>
-            <div class="modal-chart-body" style="position: relative; width: 100%; height: calc(100vh - 120px); cursor: ew-resize;">
-                <canvas id="expanded-chart"></canvas>
+            <div class="modal-chart-body" style="position: relative; width: 100%; height: calc(100vh - 120px);">
+                <!-- Fixed Y-Axis for Modal -->
+                <div id="expanded-y-axis" style="position: absolute; left: 0; width: 25px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; padding-right: 4px; pointer-events: none; z-index: 10;"></div>
+                
+                <div id="expanded-scroll-wrapper" class="chart-scroll-wrapper" style="margin-left: 25px; width: calc(100% - 25px); height: 100%;">
+                    <div id="expanded-chart-inner" style="width: 200%; height: 100%; position: relative;">
+                        <canvas id="expanded-chart"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

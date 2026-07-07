@@ -496,7 +496,27 @@ const expandedPlugin = {
         if (!chartArea) return;
         
         ctx.save();
-        const centerX = (chartArea.left + chartArea.right) / 2;
+        // Native scroll wrapper might shift the canvas, but chartArea is internal to canvas
+        // The canvas is 200% wide, so we need to calculate the visible center.
+        // Wait, if canvas is 200% wide and native scrolling is used, the whole canvas is drawn at once!
+        // We can't easily draw the watermark at the "viewport center" if we draw it on the canvas,
+        // because the canvas is wider than the screen.
+        // But we CAN calculate it by checking the wrapper's scrollLeft.
+        const wrapper = document.getElementById('expanded-scroll-wrapper');
+        let visibleLeft = 0;
+        let visibleWidth = chartArea.right - chartArea.left;
+        if (wrapper) {
+            // wrapper scroll gives us the pixel offset of the viewport
+            const scrollRatio = wrapper.scrollLeft / wrapper.scrollWidth;
+            const viewportRatio = wrapper.clientWidth / wrapper.scrollWidth;
+            
+            // Map scroll ratio to canvas chartArea
+            const canvasTotalWidth = chartArea.right - chartArea.left;
+            visibleLeft = chartArea.left + (scrollRatio * canvasTotalWidth);
+            visibleWidth = viewportRatio * canvasTotalWidth;
+        }
+        
+        const centerX = visibleLeft + (visibleWidth / 2);
         const centerValue = chart.scales.x.getValueForPixel(centerX);
         
         if (centerValue !== undefined && chart.data.labels[Math.round(centerValue)]) {
@@ -505,7 +525,6 @@ const expandedPlugin = {
             
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            // Adjusted font size for mobile
             const fontSize = window.innerWidth < 768 ? 60 : 120;
             ctx.font = `bold ${fontSize}px sans-serif`;
             ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
@@ -530,6 +549,8 @@ const expandedPlugin = {
         const minIndex = Math.max(0, Math.floor(x.getValueForPixel(left)));
         const maxIndex = Math.min(totalMinutes - 1, Math.ceil(x.getValueForPixel(right)));
         
+        const isLandscape = window.innerWidth > window.innerHeight;
+        
         for(let i = minIndex; i <= maxIndex; i++) { 
             const minWithinHour = i % 60;
             if (minWithinHour !== 0) continue;
@@ -537,6 +558,18 @@ const expandedPlugin = {
             const posX = x.getPixelForValue(i);
             if(posX < left || posX > right) continue;
             
+            const labelText = chart.data.labels[i];
+            if (!labelText) continue;
+            
+            const parts = labelText.split(' '); 
+            if (parts.length < 3) continue;
+            
+            const hourStr = parseInt(parts[2].split(':')[0], 10); 
+            const isOdd = hourStr % 2 !== 0;
+            
+            // Skip odd hours if portrait
+            if (isOdd && !isLandscape) continue;
+
             let tickLength = 10;
             let lineWidth = 1.5;
             
@@ -549,36 +582,15 @@ const expandedPlugin = {
             
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
+            ctx.font = '11px sans-serif';
             
-            const labelText = chart.data.labels[i];
-            if (labelText) {
-                const parts = labelText.split(' '); 
-                if (parts.length >= 3) {
-                    const hourStr = parseInt(parts[2].split(':')[0], 10); 
-                    ctx.font = '11px sans-serif';
-                    
-                    // Highlight odd hours in a slightly different color or just same
-                    if (hourStr % 2 !== 0) {
-                        ctx.fillStyle = '#94a3b8'; // odd hours slightly dimmer
-                    } else {
-                        ctx.fillStyle = '#cbd5e1'; // even hours brighter
-                    }
-                    ctx.fillText(hourStr, posX, bottom + 12);
-                }
+            if (isOdd) {
+                ctx.fillStyle = '#94a3b8'; // odd hours slightly dimmer
+            } else {
+                ctx.fillStyle = '#cbd5e1'; // even hours brighter
             }
+            ctx.fillText(hourStr, posX, bottom + 12);
         }
-        
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        ctx.font = '11px sans-serif';
-        ctx.fillStyle = '#94a3b8';
-        
-        const yMax = y.max || 10;
-        const yTicks = [0, yMax/2, yMax];
-        yTicks.forEach(tick => {
-            const posY = y.getPixelForValue(tick);
-            ctx.fillText(Math.round(tick), left - 8, posY);
-        });
         
         ctx.restore();
     }
@@ -588,9 +600,10 @@ window.openExpandedChart = function(room) {
     const modal = document.getElementById('chart-modal');
     const title = document.getElementById('modal-title');
     modal.style.display = 'flex';
-    title.innerText = `กราฟขยาย - ห้อง ${room} (เลื่อนซ้ายดูย้อนหลัง 2 วัน)`;
+    title.innerText = `กราฟขยาย - ห้อง ${room} (เลื่อนซ้ายดูย้อนหลัง 1 วัน)`;
     
-    const startDate = new Date(activeYear1, activeMonth1 - 1, activeDay1 - 2, 6, 0, 0);
+    // 1 day backward
+    const startDate = new Date(activeYear1, activeMonth1 - 1, activeDay1 - 1, 6, 0, 0);
     const endDate = new Date(activeYear1, activeMonth1 - 1, activeDay1 + 1, 6, 0, 0);
     
     const times = [];
@@ -662,7 +675,7 @@ window.openExpandedChart = function(room) {
                 backgroundColor: gradient,
                 borderWidth: 2,
                 pointRadius: 0,
-                pointHoverRadius: 0, // Disable hover point to avoid closing modal when tapping
+                pointHoverRadius: 0,
                 fill: true,
                 tension: 0.1
             }]
@@ -671,36 +684,17 @@ window.openExpandedChart = function(room) {
             responsive: true,
             maintainAspectRatio: false,
             layout: {
-                padding: { bottom: 40, left: 35 }
+                padding: { bottom: 40, left: 10, right: 20 }
             },
-            events: ['touchstart', 'touchmove', 'touchend', 'mousedown', 'mousemove', 'mouseup'], // allow events for zoom
-            interaction: {
-                mode: 'nearest',
-                axis: 'x',
-                intersect: false
-            },
+            events: [], // Disable internal chart events for smooth native scrolling and tap-to-close
             plugins: {
                 legend: { display: false },
-                tooltip: { enabled: false }, // Disable tooltip since user wants tap to close
-                zoom: {
-                    pan: {
-                        enabled: true,
-                        mode: 'x',
-                        modifierKey: null,
-                    },
-                    zoom: {
-                        wheel: { enabled: true },
-                        pinch: { enabled: true },
-                        mode: 'x',
-                    }
-                }
+                tooltip: { enabled: false }
             },
             scales: {
                 x: {
                     grid: { display: false, drawBorder: false },
-                    ticks: { display: false },
-                    min: times.length - 1441, // Show only the last 24 hours initially
-                    max: times.length - 1
+                    ticks: { display: false }
                 },
                 y: {
                     grid: { color: 'rgba(255, 255, 255, 0.05)' },
@@ -712,4 +706,33 @@ window.openExpandedChart = function(room) {
         },
         plugins: [expandedPlugin]
     });
+    
+    // Set fixed Y-axis DOM
+    const yAxisDiv = document.getElementById('expanded-y-axis');
+    // Ensure we give Chart.js a moment to calculate chartArea
+    setTimeout(() => {
+        const chartArea = expandedChartInstance.chartArea;
+        if (yAxisDiv && chartArea) {
+            yAxisDiv.style.top = `${chartArea.top}px`;
+            yAxisDiv.style.height = `${chartArea.bottom - chartArea.top}px`;
+            const yMax = expandedChartInstance.scales.y.max || 10;
+            yAxisDiv.innerHTML = `
+                <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">${Math.round(yMax)}</span>
+                <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">${Math.round(yMax / 2)}</span>
+                <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">0</span>
+            `;
+        }
+    }, 50);
+    
+    // Add scroll event listener to redraw the watermark
+    const wrapper = document.getElementById('expanded-scroll-wrapper');
+    if (wrapper) {
+        wrapper.onscroll = () => {
+            if (expandedChartInstance) expandedChartInstance.draw();
+        };
+        // Auto scroll to the rightmost side (current day) after render
+        setTimeout(() => {
+            wrapper.scrollLeft = wrapper.scrollWidth;
+        }, 100);
+    }
 };
