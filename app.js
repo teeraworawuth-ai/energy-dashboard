@@ -527,7 +527,7 @@ const expandedPlugin = {
             ctx.textBaseline = 'middle';
             const fontSize = window.innerWidth < 768 ? 60 : 120;
             ctx.font = `bold ${fontSize}px sans-serif`;
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.15)'; // Darker watermark
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.25)'; // Darker watermark
             ctx.fillText(`วันที่ ${datePart}`, centerX, (chartArea.top + chartArea.bottom) / 2);
         }
         ctx.restore();

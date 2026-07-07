@@ -20,6 +20,7 @@ body {
     background-color: var(--bg-color);
     color: var(--text-primary);
     min-height: 100vh;
+    overflow-x: hidden;
 }
 
 .dashboard-container {
@@ -379,8 +380,8 @@ h1 {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
+    right: 0;
+    bottom: 0;
     background: rgba(15, 23, 42, 1); /* 100% opaque background */
     z-index: 9999;
     display: flex;
