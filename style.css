@@ -381,9 +381,7 @@ h1 {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(15, 23, 42, 0.85); /* dark overlay */
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(15, 23, 42, 1); /* 100% opaque background */
     z-index: 9999;
     display: flex;
     justify-content: center;
